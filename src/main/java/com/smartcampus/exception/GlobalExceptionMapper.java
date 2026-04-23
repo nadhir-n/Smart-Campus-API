@@ -10,7 +10,8 @@ import java.util.Map;
 public class GlobalExceptionMapper implements ExceptionMapper<Throwable> {
     @Override
     public Response toResponse(Throwable exception) {
-        if (exception instanceof WebApplicationException webApplicationException) {
+        if (exception instanceof WebApplicationException) {
+            WebApplicationException webApplicationException = (WebApplicationException) exception;
             return webApplicationException.getResponse();
         }
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

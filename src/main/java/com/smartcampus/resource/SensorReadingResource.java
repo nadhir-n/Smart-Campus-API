@@ -36,6 +36,9 @@ public class SensorReadingResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addReading(SensorReading input) {
+        if (input == null) {
+            throw new WebApplicationException("Reading value is required", Response.Status.BAD_REQUEST);
+        }
         Sensor sensor = DataStore.sensors.get(sensorId);
         if (sensor == null) {
             throw new WebApplicationException(Response.Status.NOT_FOUND);
@@ -47,10 +50,10 @@ public class SensorReadingResource {
         reading.setId(UUID.randomUUID().toString());
         reading.setTimestamp(System.currentTimeMillis());
         reading.setValue(input.getValue());
-        
+
         sensor.setCurrentValue(reading.getValue());
         DataStore.readings.get(sensorId).add(reading);
-        
+
         return Response.status(Response.Status.CREATED).entity(reading).build();
     }
 }
