@@ -275,7 +275,7 @@ If a client sends `Content-Type: text/plain` or `Content-Type: application/xml`,
 
 ### Part 4.1 — Sub-Resource Locator Pattern Benefits
 
-The Sub-Resource Locator pattern allows a resource class to dynamically delegate handling of a sub-path to another class. In this project, `SensorResource.getReadingsResource()` matches `/{sensorId}/readings` and returns a `SensorReadingResource` instance; JAX-RS then dispocks the remaining path to that object.
+The Sub-Resource Locator pattern allows a resource class to dynamically delegate handling of a sub-path to another class. In this project, `SensorResource.getReadingsResource()` matches `/{sensorId}/readings` and returns a `SensorReadingResource` instance; JAX-RS then dispatches the remaining path to that object.
 
 **Advantages:**
 - **Single Responsibility Principle**: Each class handles one concern.
@@ -283,6 +283,26 @@ The Sub-Resource Locator pattern allows a resource class to dynamically delegate
 - **Testability**: `SensorReadingResource` can be unit-tested in complete isolation.
 - **Team scalability**: Multiple developers can work on different resources simultaneously.
 - **Extensibility**: Adding operations only requires changes inside the sub-resource class.
+
+---
+
+### Part 5.1 — HTTP Status Codes for CRUD Operations
+
+This project follows REST conventions for HTTP status codes:
+
+| Operation | Success Code | Description |
+|---|---|---|
+| GET | 200 OK | Resource retrieved successfully |
+| POST | 201 Created | New resource created |
+| DELETE | 204 No Content | Resource deleted successfully |
+
+| Error | Code | Description |
+|---|---|---|
+| Bad Request | 400 | Missing or invalid required fields |
+| Not Found | 404 | Resource does not exist |
+| Conflict | 409 | Business rule violation (room not empty) |
+| Unprocessable Entity | 422 | Semantic validation failure (invalid reference) |
+| Service Unavailable | 503 | Resource in maintenance mode |
 
 ---
 
@@ -295,6 +315,27 @@ When a client sends `POST /sensors` with a valid JSON body but a `roomId` that d
 **HTTP 422 Unprocessable Entity** means "the server understands the content type and syntax of the request, but cannot process the contained semantic instructions." This precisely describes the situation: the JSON is valid and the endpoint is correct, but a referenced entity inside the payload does not exist.
 
 This project uses a custom `LinkedResourceNotFoundException` mapped to HTTP 422 for this scenario.
+
+---
+
+### Part 5.3 — Exception Mapping in JAX-RS
+
+JAX-RS provides `ExceptionMapper` interface to map Java exceptions to HTTP responses. Each exception in this project has a corresponding mapper:
+
+| Exception | HTTP Code | Description |
+|---|---|---|
+| `RoomNotEmptyException` | 409 Conflict | Room still has sensors |
+| `LinkedResourceNotFoundException` | 422 Unprocessable | Invalid roomId reference |
+| `SensorUnavailableException` | 503 Service Unavailable | Sensor in MAINTENANCE mode |
+| Generic Exception | 500 Internal Server Error | Catch-all for unexpected errors |
+
+**How it works:**
+1. Resource throws a custom exception (e.g., `RoomNotEmptyException`)
+2. JAX-RS finds the matching `ExceptionMapper<RoomNotEmptyException>`
+3. Mapper converts exception to appropriate HTTP response
+4. Client receives clean JSON error, not Java stack trace
+
+This keeps resource code clean while providing consistent error handling across the API.
 
 ---
 
