@@ -72,9 +72,11 @@ public class SensorReadingResource {
         }
 
         if (reading == null) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(Map.of("status", 400, "error", "Bad Request", "message", "Reading body is required."))
-                    .build();
+            Map<String, Object> err = new HashMap<>();
+            err.put("status", 400);
+            err.put("error", "Bad Request");
+            err.put("message", "Reading body is required.");
+            return Response.status(Response.Status.BAD_REQUEST).entity(err).build();
         }
 
         if (reading.getId() == null || reading.getId().isBlank()) {
