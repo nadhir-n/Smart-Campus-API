@@ -59,7 +59,7 @@ smartcampus-api/
     │   ├── SensorUnavailableException.java
     │   ├── RoomNotEmptyExceptionMapper.java     # 409 Conflict
     │   ├── LinkedResourceNotFoundExceptionMapper.java # 422 Unprocessable Entity
-    │   ├── SensorUnavailableExceptionMapper.java    # 503 Service Unavailable
+    │   ├── SensorUnavailableExceptionMapper.java    # 403 Forbidden
     │   └── GlobalExceptionMapper.java          # 500 catch-all
     └── filters/
         └── LoggingFilter.java           # Request/response logging
@@ -93,7 +93,7 @@ java -jar target/smart-campus-api-1.0-SNAPSHOT.jar
 You should see:
 ```
 Smart Campus API started at http://localhost:8080/api/v1
-Press Enter to stop...
+Press CTRL+C to stop...
 ```
 
 ### Step 4: Verify it's running
@@ -118,7 +118,7 @@ Press `Enter` to stop the server.
 | GET | `/api/v1/rooms` | List all rooms | 200 | — |
 | POST | `/api/v1/rooms` | Create a new room | 201 | 400 |
 | GET | `/api/v1/rooms/{roomId}` | Get a specific room | 200 | 404 |
-| DELETE | `/api/v1/rooms/{roomId}` | Delete room (blocked if sensors present) | 204 | 404, 409 |
+| DELETE | `/api/v1/rooms/{roomId}` | Delete room (blocked if sensors present) | 200 | 404, 409 |
 
 ### Sensors — `/api/v1/sensors`
 | Method | Path | Description | Success | Error |
@@ -131,7 +131,7 @@ Press `Enter` to stop the server.
 | Method | Path | Description | Success | Error |
 |---|---|---|---|---|
 | GET | `/api/v1/sensors/{sensorId}/readings` | Full reading history | 200 | 404 |
-| POST | `/api/v1/sensors/{sensorId}/readings` | Add reading (updates currentValue) | 201 | 404, 503 |
+| POST | `/api/v1/sensors/{sensorId}/readings` | Add reading (updates currentValue) | 201 | 404, 403 |
 
 ---
 
@@ -161,7 +161,7 @@ curl -X GET http://localhost:8080/api/v1/rooms/CONF-2B -H "Accept: application/j
 
 ### 5. Attempt to delete a room that has sensors — expects 409 Conflict
 ```bash
-curl -X DELETE http://localhost:8080/api/v1/rooms/CONF-2B
+curl -X DELETE http://localhost:8080/api/v1/rooms/LIB-301
 ```
 
 ### 6. List all sensors
@@ -195,7 +195,7 @@ curl -X POST http://localhost:8080/api/v1/sensors/TEMP-001/readings \
   -d '{"value":24.7}'
 ```
 
-### 11. Post a reading to a MAINTENANCE sensor — expects 503
+### 11. Post a reading to a MAINTENANCE sensor — expects 403
 ```bash
 curl -X POST http://localhost:8080/api/v1/sensors/TEMP-001/readings \
   -H "Content-Type: application/json" \
@@ -247,7 +247,7 @@ The practical industry approach (used here) is to return **full summary objects*
 
 Yes, the `DELETE` operation in this implementation is **idempotent** in terms of server state. RFC 7231 defines idempotency as: the intended effect on the server is the same whether the request is made once or multiple times.
 
-- **First `DELETE /rooms/CS-101`** (room exists, no sensors): removes the room, returns `204 No Content`.
+- **First `DELETE /rooms/CS-101`** (room exists, no sensors): removes the room, returns `200 OK`.
 - **Second `DELETE /rooms/CS-101`** (room already gone): returns `404 Not Found`.
 
 The server state — *"room CS-101 does not exist"* — is identical after the first call and after every subsequent call. This is the widely accepted and semantically honest pattern: the end state is idempotent even when the status code varies, consistent with how most production REST APIs handle repeated deletes.
@@ -294,7 +294,7 @@ This project follows REST conventions for HTTP status codes:
 |---|---|---|
 | GET | 200 OK | Resource retrieved successfully |
 | POST | 201 Created | New resource created |
-| DELETE | 204 No Content | Resource deleted successfully |
+| DELETE | 200 OK | Resource deleted successfully |
 
 | Error | Code | Description |
 |---|---|---|
